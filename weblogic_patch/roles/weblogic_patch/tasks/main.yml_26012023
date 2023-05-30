@@ -1,0 +1,54 @@
+---
+- name: Stop Weblogic Admin service
+  become: yes
+  systemd:
+    name: wls_adminserver
+    state: stopped
+  tags:
+   - stop
+   
+- name: Stop Weblogic NodeManager service
+  become: yes
+  systemd:
+    name: wls_nodemanager
+    state: stopped
+  tags:
+   - stop
+
+- name: Unzip Latest Weblogic CPU to PATCH_TOP
+  become: yes
+  become_user: "{{ os_user }}"
+  ansible.builtin.unarchive:
+    src: "{{ setup_home }}/{{ patch_file }}"
+    dest: "{{ patch_top_home }}"
+    remote_src: yes
+
+
+- name: Weblogic Critical Patch Update
+  tags: cpuweblogic
+  become: yes
+  become_user: "{{ os_user }}"
+  shell: "{{ oracle_home }}/OPatch/opatch apply -silent"
+  register: weblogiccpu
+  args:
+    chdir: "{{ patch_top_home }}/{{ patch_id }}"
+  ignore_errors: true
+
+- debug:
+    msg: "WEBLOGIC CPU: {{ weblogiccpu }}"
+
+- name: Start Weblogic Admin service
+  become: yes
+  systemd:
+    name: wls_adminserver
+    state: started
+  tags:
+   - start
+   
+- name: Start Weblogic NodeManager service
+  become: yes
+  systemd:
+    name: wls_nodemanager
+    state: started
+  tags:
+   - start

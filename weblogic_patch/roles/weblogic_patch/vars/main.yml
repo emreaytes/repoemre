@@ -1,0 +1,29 @@
+# Paths
+main_home: "/data/weblogic"
+oracle_home: "{{ main_home }}/weblogic"
+java_install_folder: "{{ main_home }}/jdk"
+jdk_folder_name: "jdk1.8.0_311"
+java_home: "{{ main_home }}/jdk/{{ jdk_folder_name }}"
+wlshome: "{{ oracle_home }}/wlserver"
+domainroot: "{{ oracle_home }}/user_projects/domains"
+setup_home: "{{ main_home }}/setups"
+patch_top_home: "{{ oracle_home }}/PATCH_TOP"
+ansible_tmp: "{{ main_home }}/ansible_tmp"
+#workspace_name: "${JOB_NAME}"
+#jenkins_home: "/data/jenkins"
+
+# Files
+patch_file: "p35261722_122130_Generic.zip"
+patch_id: "WLS_SPB_12.2.1.3.230405"
+opatch_file: "p28186730_1394212_Generic.zip"
+opatch_filename: "opatch_generic.jar"
+
+# OS Credentials
+os_user: 'weblogic'
+os_group: 'weblogic'
+chmod: "0777"
+
+timestamp: "{{ansible_date_time.date}}_{{ansible_date_time.hour}}_{{ansible_date_time.minute}}"
+
+#Hosts
+hostname: '{{ ansible_fqdn }}'
