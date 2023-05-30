@@ -1,0 +1,6 @@
+--- 
+- name: SeturBiz Tomcat Restart        
+  hosts: "{{ HOST_GROUP }}"
+  serial: "50%"
+  roles:
+    - seturbiz-tomcat-status

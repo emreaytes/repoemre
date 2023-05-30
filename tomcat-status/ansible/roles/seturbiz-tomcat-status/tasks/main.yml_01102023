@@ -1,0 +1,172 @@
+---
+- name: Create Ansible_tmp directory
+  become: yes
+  tags: cpbinaries
+  file:
+    dest: "{{ ansible_tmp }}"
+    mode: "{{ chmod }}"
+    owner: "{{ os_user }}"
+    group: "{{ os_group }}"
+    state: directory
+
+- name: Create War_Backup directory
+  become: yes
+  tags: cpbinaries
+  file:
+    dest: "{{ war_backup_home }}"
+    mode: "{{ chmod }}"
+    owner: "{{ os_user }}"
+    group: "{{ os_group }}"
+    state: directory
+
+- name: Download latest Seturbiz.war file
+  become: yes
+  tags: cpbinaries
+  get_url: 
+  #    url: "{{ NEXUS_PROTOCOL }}://{{ NEXUS_IP }}:{{ NEXUS_PORT }}/repository/{{ REPO_NAME }}/{{ REPO_GRP_ID }}/{{ REPO_ART_ID }}/{{ APP_VERSION }}/{{ REPO_ART_ID }}-{{ APP_VERSION }}.war"
+    url: "{{ NEXUS_PROTOCOL }}://{{ NEXUS_URL }}/repository/{{ REPO_NAME }}/{{ REPO_GRP_ID }}/{{ REPO_ART_ID }}/{{ APP_VERSION }}/{{ REPO_ART_ID }}-{{ APP_VERSION }}.war"
+    url_username: "admin"
+    url_password: "Admin123"
+    dest: "{{ ansible_tmp }}" 
+    owner: "{{ os_user  }}"
+    group: "{{ os_group  }}"
+    mode: "{{ chmod }}"
+
+
+    #- name : Copy Artifact to Tomcat Ansible tmp File on Tomcat
+    #  tags: cpbinaries
+    #  become: yes
+    #  copy:
+    #    src: "{{ jenkins_home }}/workspace/{{ workspace_name }}/{{ package_name }}/target/{{ ansible_war_filename }}"
+    #    dest: "{{ ansible_tmp }}"
+    #    owner: "{{ os_user  }}"
+    #    group: "{{ os_group  }}" 
+    #    mode: "{{ chmod }}"
+
+
+- stat:
+    path: "{{ webapp_home }}/{{ tomcat_war_filename }}"
+  register: artifact_stat
+  become: yes
+  tags:
+   - deploy
+
+
+- name: Stop Tomcat service
+  become: yes
+  service:
+    name: tomcat
+    state: stopped
+  tags:
+   - deploy
+
+
+- name: Try Backup and Deploy
+  block:
+  - name: Archive War dir with timestamp
+    become: yes
+    archive:
+      path: "{{ webapp_home }}/{{ tomcat_war_filename }}"
+      dest: "{{ war_backup_home }}/{{ tomcat_war_filename }}_{{timestamp}}.tgz"
+      owner: "{{ os_user }}"
+      group: "{{ os_group }}"
+    when: artifact_stat.stat.exists
+    register: archive_info
+    tags:
+     - deploy
+
+
+  - name: copy War dir with old_war name
+    become: yes
+    shell: "cp -r {{ tomcat_war_filename }} old_{{ tomcat_war_filename }}"
+    # owner: "{{ os_user }}"
+    #group: "{{ os_group }}"
+    args:
+      chdir: "{{ webapp_home }}"
+
+
+  - name: Delete current artifact
+    become: yes
+    file:
+      path: "{{item}}"
+      state: absent
+    when: archive_info.changed
+    loop:
+     - "{{ webapp_home }}/{{ tomcat_war_filename }}"
+     - "{{ webapp_home }}/{{ tomcat_war_filename }}.war"
+    tags:
+     - deploy
+
+
+  - name: Try deploy artifact else restore from previos old_war
+    block:
+     - name: Deploy seturbiz artifact
+       become: yes
+       copy:
+         src: "{{ ansible_tmp }}/{{ ansible_war_filename }}"
+         dest: "{{ webapp_home }}/{{ tomcat_war_filename }}.war"
+         owner: "{{ os_user }}"
+         group: "{{ os_group }}"
+         mode: "{{ chmod }}"
+         remote_src: yes
+       register: deploy_info
+       tags:
+        - deploy
+    rescue:
+      - shell: "cp -r old_{{ tomcat_war_filename }} {{ tomcat_war_filename }}"
+        become: yes
+        #owner: "{{ os_user }}"
+        #group: "{{ os_group }}"
+        args:
+          chdir: "{{ webapp_home }}"
+
+  rescue:
+   - name: Start Tomcat service
+     become: yes
+     service:
+      name: tomcat
+      state: started
+
+
+- name: Start Tomcat service
+  become: yes
+  service:
+    name: tomcat
+    state: started
+  when: deploy_info.changed
+  tags:
+   - deploy
+
+
+- name: Delete Archive artifacts
+  become: yes
+  shell: find . -name "*.tgz" -type f -mtime +1 -delete
+  args:
+    chdir: "{{ war_backup_home }}"
+
+- stat:
+    path: "{{ webapp_home }}/old_{{ tomcat_war_filename }}"
+  register: oldwar_stat
+  become: yes
+  tags:
+   - deploy
+
+
+- name: Delete old_war folder
+  become: yes
+  file: 
+    path: "{{ webapp_home }}/old_{{ tomcat_war_filename }}"
+    state: absent
+  when: oldwar_stat.stat.exists
+
+
+- name: Wait until War File extracted
+  become: yes
+  wait_for:
+    path: "{{ webapp_home }}/{{ tomcat_war_filename }}"
+  tags:
+   - deploy
+
+
+
+

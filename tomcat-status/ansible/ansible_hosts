@@ -1,0 +1,37 @@
+#Tomcat Preprod Servers
+[preprod]
+cimb2brapp
+
+
+
+#Tomcat Prod Server
+[prod]
+CIMB2B01PAPP
+CIMB2B02PAPP
+ANKB2B01PAPP
+
+
+#Tomcat Stage Server
+[stage]
+CIMB2BEAPP
+
+
+
+#Tomcat Jobs Server
+[jobs]
+cimb2bdapp
+
+
+
+[sandbox]
+CIMB2BSAPP
+
+
+
+
+#Group 'multi' with all servers
+[multi:children]
+#preprod
+#prod
+#stage
+#jobs

@@ -1,0 +1,24 @@
+---
+- name: Restart Tomcat service
+  become: yes
+  service:
+    name: tomcat
+    state: restarted
+  tags:
+   - restart
+
+- name: Stop Tomcat service
+  become: yes
+  service:
+    name: tomcat
+    state: stopped
+  tags:
+   - stop
+
+- name: Start Tomcat service
+  become: yes
+  service:
+    name: tomcat
+    state: started
+  tags:
+   - start

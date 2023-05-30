@@ -1,0 +1,28 @@
+# Paths
+catalina_home: "/data/apache-tomcat-7.0.109"
+ansible_tmp: "{{ catalina_home }}/ansible_tmp"
+#workspace_name: "Prod-Deploy-maven"
+workspace_name: "${JOB_NAME}"
+jenkins_home: "/data/jenkins"
+
+#NEXUS INFO
+#NEXUS_PROTOCOL: "http"
+#NEXUS_IP: "jenkins-seturbiz.setur.software"
+#NEXUS_PORT: "8081"
+#REPO_NAME: "seturbiz-release"
+#REPO_GRP_ID: "com/seturbiz"
+#REPO_ART_ID: "bookinturkey"
+#APP_VERSION: "1.49.0"
+
+
+
+# OS Credentials
+os_user: 'tomcat'
+os_group: 'tomcat'
+chmod: "0777"
+
+timestamp: "{{ansible_date_time.date}}_{{ansible_date_time.hour}}_{{ansible_date_time.minute}}"
+
+#Hosts
+hostname: '{{ ansible_fqdn }}' 
+
